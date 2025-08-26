@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Photo Booth - Black Box</title>
+  <link rel="stylesheet" href="syle.css">
+  <style>
+    .booth-container {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+      color: #fff;     
+      z-index: 10;
+    }
+
+    video, canvas {
+      width: 400px;
+      height: 300px;
+      border-radius: 15px;
+      object-fit: cover;
+    }
+
+    .frame-overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 400px;
+      height: 300px;
+      pointer-events: none;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .preview-area {
+      position: relative;
+      display: inline-block;
+      margin: 20px auto;
+    }
+
+    .controls {
+      margin-top: 15px;
+    }
+
+    select, button {
+      padding: 8px;
+      font-size: 1rem;
+      margin: 10px;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+      cursor: pointer;
+    }
+
+    #snapshot {
+      background: #444;
+      color: #fff;
+    }
+    #snapshot:hover {
+      background: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="booth-container">
+    <h1>PHOTO BOOTH</h1>
+
+    <!-- Camera Preview with Frame Overlay -->
+    <div class="preview-area">
+      <video id="camera" autoplay playsinline></video>
+      <div id="frame" class="frame-overlay"></div>
+    </div>
+
+    <!-- Captured Image -->
+    <canvas id="captured" style="display:none;"></canvas>
+
+    <div class="controls">
+      <!-- Filter Selector -->
+      <label for="filter">Choose Filter: </label>
+      <select id="filter">
+        <option value="none">None</option>
+        <option value="grayscale(100%)">Black & White</option>
+        <option value="sepia(100%)">Sepia</option>
+        <option value="contrast(150%)">High Contrast</option>
+        <option value="invert(100%)">Invert</option>
+        <option value="brightness(150%)">Bright</option>
+        <option value="hue-rotate(90deg)">Funky Colors</option>
+      </select>
+
+      <!-- Frame Selector -->
+      <label for="frameSelect">Choose Frame: </label>
+      <select id="frameSelect">
+        <option value="none">None</option>
+        <option value="assets/frame_face.png">Face Cutout</option>
+        <option value="assets/frame_landscape.png">Landscape</option>
+        <option value="assets/frame_polaroid.png">Polaroid</option>
+      </select>
+
+      <!-- Capture Button -->
+      <button id="snapshot">Take Picture</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    const video = document.getElementById('camera');
+    const canvas = document.getElementById('captured');
+    const ctx = canvas.getContext('2d');
+    const frameOverlay = document.getElementById('frame');
+    const filterSelect = document.getElementById('filter');
+    const frameSelect = document.getElementById('frameSelect');
+    const snapshotBtn = document.getElementById('snapshot');
+
+    // Start Camera
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        alert("Camera access denied: " + err);
+      });
+
+    // Apply filter
+    filterSelect.addEventListener('change', () => {
+      video.style.filter = filterSelect.value;
+    });
+
+    // Change frame overlay
+    frameSelect.addEventListener('change', () => {
+      if (frameSelect.value === "none") {
+        frameOverlay.style.backgroundImage = "none";
+      } else {
+        frameOverlay.style.backgroundImage = `url(${frameSelect.value})`;
+      }
+    });
+
+    // Capture snapshot
+    snapshotBtn.addEventListener('click', () => {
+      canvas.style.display = "block";
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      // Apply filter to canvas
+      ctx.filter = filterSelect.value;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Draw frame overlay if selected
+      if (frameSelect.value !== "none") {
+        let frameImg = new Image();
+        frameImg.src = frameSelect.value;
+        frameImg.onload = () => {
+          ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height);
+        }
+      }
+    });
+  </script>
+</body>
+</html>
